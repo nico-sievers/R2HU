@@ -2,7 +2,7 @@
 #'
 #' @description \code{-BETA-}   Ask Nico if you would like to use this function.
 #'
-#' @param working_directory,rawfile_folder,rawfile_identifier,writetofile,concatenatedfile_folder,concatenatedfile_name,writetoexcel,excelfile_name,excelfile_sheet,apply_chlacalibration,setsinsupergroups,apply_sizecalibration \code{(to be updated)}
+#' @param working_directory,rawfile_folder,rawfile_identifier,writetofile,concatenatedfile_folder,concatenatedfile_name,writetoexcel,excelfile_name,excelfile_sheet,apply_chlacalibration,setsinsupergroups,apply_lengthcalibration \code{(to be updated)}
 #'
 #' @return Yields a clean data frame of the standard layout and writes to files if selected.
 #'
@@ -33,7 +33,7 @@ R2HUconcatenateFlowdata=function(working_directory="./",
 
                                  apply_chlacalibration=F,
                                  setsinsupergroups=F,
-                                 apply_sizecalibration=F){
+                                 apply_lengthcalibration=F){
 
 
 

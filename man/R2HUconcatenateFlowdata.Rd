@@ -16,15 +16,15 @@ R2HUconcatenateFlowdata(
   excelfile_sheet = "Main table",
   apply_chlacalibration = F,
   setsinsupergroups = F,
-  apply_sizecalibration = F
+  apply_lengthcalibration = F
 )
 }
 \arguments{
-\item{working_directory, rawfile_folder, rawfile_identifier, writetofile, concatenatedfile_folder, concatenatedfile_name, writetoexcel, excelfile_name, excelfile_sheet, apply_chlacalibration, setsinsupergroups, apply_sizecalibration}{\code{(to be updated)}}
+\item{working_directory, rawfile_folder, rawfile_identifier, writetofile, concatenatedfile_folder, concatenatedfile_name, writetoexcel, excelfile_name, excelfile_sheet, apply_chlacalibration, setsinsupergroups, apply_lengthcalibration}{\code{(to be updated)}}
 }
 \value{
 Yields a clean data frame of the standard layout and writes to files if selected.
 }
 \description{
-\code{-BETA-}: Ask Nico if you would like to use this function.
+\code{-BETA-}   Ask Nico if you would like to use this function.
 }
