@@ -1,37 +1,39 @@
 #' @title Function to concatenate raw Flow Cytometry data into the standard KOSMOS data sheet layout
 #'
-#' @description \code{-BETA-}: Ask Nico if you would like to use this function.
+#' @description \code{-BETA-}   Ask Nico if you would like to use this function.
 #'
-#' @param ... \code{(to be updated)}
+#' @param working_directory,rawfile_folder,rawfile_identifier,writetofile,concatenatedfile_folder,concatenatedfile_name,writetoexcel,excelfile_name,excelfile_sheet,apply_chlacalibration,setsinsupergroups,apply_sizecalibration \code{(to be updated)}
 #'
-#' @return Yields a clean data frame of the standard layout.
+#' @return Yields a clean data frame of the standard layout and writes to files if selected.
 #'
 ## @examples
 ## KOSMOSconcatenateFlowdata()
 #'
 #' @export
 #'
-#' @importFrom dplyr bind_rows
+#' @importFrom utils View write.csv
+#' @importFrom dplyr bind_rows full_join %>% group_by summarise mutate distinct select
 #' @importFrom readr read_csv
 #' @importFrom openxlsx loadWorkbook writeData saveWorkbook
 #' @importFrom readxl read_excel
+#' @importFrom stats lm
 
 
-KOSMOSconcatenateFlowdata=function(working_directory="./",
-                                   rawfile_folder="export/set-statistics/",
-                                   rawfile_identifier="set_statistics_",
+R2HUconcatenateFlowdata=function(working_directory="./",
+                                 rawfile_folder="export/set-statistics/",
+                                 rawfile_identifier="set_statistics_",
 
-                                   writetofile=T,
-                                   concatenatedfile_folder="",
-                                   concatenatedfile_name="concatenated_clean_data.csv",
+                                 writetofile=T,
+                                 concatenatedfile_folder="",
+                                 concatenatedfile_name="concatenated_clean_data.csv",
 
-                                   writetoexcel=F,
-                                   excelfile_name="KOSMOS_Kiel_spring_2024_FlowCytometry_Sievers_R.xlsx",
-                                   excelfile_sheet="Main table",
+                                 writetoexcel=F,
+                                 excelfile_name="KOSMOS_Kiel_spring_2024_FlowCytometry_Sievers_R.xlsx",
+                                 excelfile_sheet="Main table",
 
-                                   apply_chlacalibration=F,
-                                   setsinsupergroups=F,
-                                   apply_sizecalibration=F){
+                                 apply_chlacalibration=F,
+                                 setsinsupergroups=F,
+                                 apply_sizecalibration=F){
 
 
 
@@ -100,7 +102,7 @@ KOSMOSconcatenateFlowdata=function(working_directory="./",
   }
 
   # fix datastructure - only what is necessary here
-  dimnames(concatenated_data)[[2]][11]="Concentration [n/µl]"
+  dimnames(concatenated_data)[[2]][11]="Concentration [n/\u230l]"
   concatenated_data$Day=factor(concatenated_data$Day,c(1:3,seq(5,33,2)))
   concatenated_data$Delta_TA=as.integer(concatenated_data$Delta_TA)
   concatenated_data$Set=sub("/","_",concatenated_data$Set) #replace any "/" that stupid me used in set names
@@ -119,8 +121,8 @@ KOSMOSconcatenateFlowdata=function(working_directory="./",
   # the various Chla proxies, their references, and normalisations
   if(T){
     # use meanRED*conc to account for volume changes
-    concatenated_data$ChlaProxyRaw=concatenated_data$`Concentration [n/µl]`*concatenated_data$`Mean FL Red Total`
-    concatenated_data$ChlaProxyRaw[concatenated_data$`Concentration [n/µl]`==0]=0
+    concatenated_data$ChlaProxyRaw=concatenated_data$'Concentration [n/\u230l]'*concatenated_data$`Mean FL Red Total`
+    concatenated_data$ChlaProxyRaw[concatenated_data$'Concentration [n/\u230l]'==0]=0
 
     # exclude M1 systematically from biomass calculations
     concatenated_data$ChlaProxyRaw[concatenated_data$Day==1]=NA
@@ -131,7 +133,7 @@ KOSMOSconcatenateFlowdata=function(working_directory="./",
 
       ###source("./scripts/calibrate_chla.R")
       if(T){
-        chla_filter=read_excel(paste0(path,"KOSMOS_Kiel_spring_2024_Chlorophyll_a_25_03_2024_JT.xlsx"),sheet = "Main table",na=c("",NA))
+        chla_filter=read_excel(paste0(working_directory,"KOSMOS_Kiel_spring_2024_Chlorophyll_a_25_03_2024_JT.xlsx"),sheet = "Main table",na=c("",NA))
         chla_filter$Day=factor(chla_filter$Day,c(1:3,seq(5,33,2)))
         chlcal=chla_filter
 
@@ -145,8 +147,8 @@ KOSMOSconcatenateFlowdata=function(working_directory="./",
           tocalibratelarge=tocalibrate[tocalibrate$Settings=="large",]
           tocalibratesmall=tocalibrate[tocalibrate$Settings=="small",]
 
-          lmlarge=lm(ChlaProxyRaw~`Chlorophyll a (µg/L)`,tocalibratelarge)
-          lmsmall=lm(ChlaProxyRaw~`Chlorophyll a (µg/L)`,tocalibratesmall)
+          lmlarge=lm(ChlaProxyRaw~'Chlorophyll a (\u230g/L)',tocalibratelarge)
+          lmsmall=lm(ChlaProxyRaw~'Chlorophyll a (\u230g/L)',tocalibratesmall)
 
           #y=mx+t
           #x=(y-t)/m
@@ -159,26 +161,26 @@ KOSMOSconcatenateFlowdata=function(working_directory="./",
         # QC
         if(T){
           #
-          # KOSMOStimeplot(chla_filter,"Chlorophyll a (µg/L)")
+          # KOSMOStimeplot(chla_filter,"Chlorophyll a (\u230g/L)")
           # KOSMOStimeplot(concatenated_data[concatenated_data$Settings=="small" & concatenated_data$Set=="All cells",],"ChlaProxyRaw")
           # KOSMOStimeplot(concatenated_data[concatenated_data$Settings=="large" & concatenated_data$Set=="All cells",],"ChlaProxyRaw")
           # KOSMOStimeplot(concatenated_data[concatenated_data$Settings=="small" & concatenated_data$Set=="All cells",],"ChlaProxyCalibrated")
           # KOSMOStimeplot(concatenated_data[concatenated_data$Settings=="large" & concatenated_data$Set=="All cells",],"ChlaProxyCalibrated")
           #
-          # plot(ChlaProxy~`Chlorophyll a (µg/L)`,tocalibratelarge)
+          # plot(ChlaProxy~'Chlorophyll a (\u230g/L)',tocalibratelarge)
           # abline(lmlarge)
-          # plot(ChlaProxy~`Chlorophyll a (µg/L)`,tocalibratesmall)
+          # plot(ChlaProxy~'Chlorophyll a (\u230g/L)',tocalibratesmall)
           # abline(lmsmall)
           #
           # library(ggplot2)
-          # ggplot(tocalibratelarge,aes(`Chlorophyll a (µg/L)`,ChlaProxy,col=Day))+
+          # ggplot(tocalibratelarge,aes('Chlorophyll a (\u230g/L)',ChlaProxy,col=Day))+
           #   geom_point()+
           #   labs(title="large",col="Day")
-          # ggplot(tocalibratesmall,aes(`Chlorophyll a (µg/L)`,ChlaProxy,col=Day))+
+          # ggplot(tocalibratesmall,aes('Chlorophyll a (\u230g/L)',ChlaProxy,col=Day))+
           #   geom_point()+
           #   labs(title="small",col="Day")
           #
-          # ggplot(tocalibratesmall,aes(`Chlorophyll a (µg/L)`,ChlaProxy,col=`% of total`))+
+          # ggplot(tocalibratesmall,aes('Chlorophyll a (\u230g/L)',ChlaProxy,col=`% of total`))+
           #   geom_point()+
           #   labs(title="small",col="Day")
           # ggplot(tocalibratesmall,aes(`% of total`,ChlaProxy,col=Day))+
@@ -200,16 +202,16 @@ KOSMOSconcatenateFlowdata=function(working_directory="./",
           # # tocalibratelarge=tocalibratelarge[!(tocalibratelarge$Day %in% c(1,2,3)),]
           # #
           # # tmp=tocalibratelarge[tocalibratelarge$Day %in% c(11),]
-          # # points(tmp$`Chlorophyll a (µg/L)`,tmp$ChlaProxy,col="blue")
+          # # points(tmp$'Chlorophyll a (\u230g/L)',tmp$ChlaProxy,col="blue")
           # #
-          # # #plot(tocalibratelarge$`Chlorophyll a (µg/L)`+1,tocalibratelarge$ChlaProxy,log="xy")
-          # # #plot(tocalibratelarge$`Chlorophyll a (µg/L)`,tocalibratelarge$ChlaProxy)
-          # # points(tocalibratelarge$`Chlorophyll a (µg/L)`,tocalibratelarge$ChlaProxy,col="blue")
-          # # soos=lm(tocalibratelarge$ChlaProxy~tocalibratelarge$`Chlorophyll a (µg/L)`)
+          # # #plot(tocalibratelarge$'Chlorophyll a (\u230g/L)'+1,tocalibratelarge$ChlaProxy,log="xy")
+          # # #plot(tocalibratelarge$'Chlorophyll a (\u230g/L)',tocalibratelarge$ChlaProxy)
+          # # points(tocalibratelarge$'Chlorophyll a (\u230g/L)',tocalibratelarge$ChlaProxy,col="blue")
+          # # soos=lm(tocalibratelarge$ChlaProxy~tocalibratelarge$'Chlorophyll a (\u230g/L)')
           # # abline(soos)
           # # # die fragwürdigen
-          # # frage=tocalibratelarge[tocalibratelarge$`Chlorophyll a (µg/L)`>3.75 & tocalibratelarge$`Chlorophyll a (µg/L)`<5 & tocalibratelarge$ChlaProxy<10000,]
-          # # points(frage$`Chlorophyll a (µg/L)`,frage$ChlaProxy,col="red")
+          # # frage=tocalibratelarge[tocalibratelarge$'Chlorophyll a (\u230g/L)'>3.75 & tocalibratelarge$'Chlorophyll a (\u230g/L)'<5 & tocalibratelarge$ChlaProxy<10000,]
+          # # points(frage$'Chlorophyll a (\u230g/L)',frage$ChlaProxy,col="red")
           #
           #
           #
@@ -217,10 +219,10 @@ KOSMOSconcatenateFlowdata=function(working_directory="./",
           # #als Kosmosplot
           # library(KOSMOSplotR)
           # meem=concatenated_data[concatenated_data$Settings=="large" & concatenated_data$Set=="All cells",]
-          # meem$chladivider=meem$ChlaProxy/meem$`Chlorophyll a (µg/L)`
+          # meem$chladivider=meem$ChlaProxy/meem$'Chlorophyll a (\u230g/L)'
           # KOSMOStimeplot(meem,"chladivider",ylimit=c(1000,7000))
           #
-          # test2=concatenated_data[,c("Filename","Set","Count","Concentration [n/µl]","Mean FL Red Total","ChlaProxy")]
+          # test2=concatenated_data[,c("Filename","Set","Count","Concentration [n/\u230l]","Mean FL Red Total","ChlaProxy")]
 
         }
       }
@@ -274,7 +276,7 @@ KOSMOSconcatenateFlowdata=function(working_directory="./",
 
     #correlate Chla proxy and concentration to see trends in chl/cell
     concatenated_data$FLredpercell=concatenated_data$`Mean FL Red Total`
-    concatenated_data$Chlapercell=concatenated_data$ChlaProxyUse/concatenated_data$`Concentration [n/µl]`
+    concatenated_data$Chlapercell=concatenated_data$ChlaProxyUse/concatenated_data$'Concentration [n/\u230l]'
 
     concatenated_data=subset(concatenated_data,select=-ChlaProxyUse)
   }
