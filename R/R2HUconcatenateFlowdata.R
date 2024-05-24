@@ -2,7 +2,7 @@
 #'
 #' @description \code{-BETA-}   Ask Nico if you would like to use this function.
 #'
-#' @param working_directory,rawfile_folder,rawfile_identifier,writetofile,concatenatedfile_folder,concatenatedfile_name,writetoexcel,excelfile_name,excelfile_sheet,apply_chlacalibration,setsinsupergroups,apply_lengthcalibration \code{(to be updated)}
+#' @param working_directory,rawfile_folder,rawfile_identifier,writetofile,concatenatedfile_name,writetoexcel,excelfile_name,excelfile_sheet,apply_chlacalibration,setsinsupergroups,apply_lengthcalibration \code{(to be updated)}
 #'
 #' @return Yields a clean data frame of the standard layout and writes to files if selected.
 #'
@@ -12,7 +12,7 @@
 #' @export
 #'
 #' @importFrom utils View write.csv
-#' @importFrom dplyr bind_rows full_join %>% group_by summarise mutate distinct select
+#' @importFrom dplyr bind_rows
 #' @importFrom readr read_csv
 #' @importFrom openxlsx loadWorkbook writeData saveWorkbook
 #' @importFrom readxl read_excel
@@ -20,17 +20,19 @@
 
 
 # for debugging:
-# working_directory="./";rawfile_folder="export/set-statistics/";rawfile_identifier="set_statistics_";writetofile=T;concatenatedfile_folder="";concatenatedfile_name="concatenated_clean_data.csv";writetoexcel=F;excelfile_name="KOSMOS_Kiel_spring_2024_FlowCytometry_Sievers_R.xlsx";excelfile_sheet="Main table";apply_chlacalibration=F;setsinsupergroups=F;apply_lengthcalibration=F
+# working_directory="./";rawfile_folder="export/set-statistics/";rawfile_identifier="set_statistics_";include_easyclus_metadata=F;easyclus_metadata_filename="KOSMOS_Kiel_spring_2024_metadata-cleaned-EasyClus.csv";writetofile=T;concatenatedfile_name="concatenated_clean_data.csv";writetoexcel=F;excelfile_name="KOSMOS_Kiel_spring_2024_FlowCytometry_Sievers_R.xlsx";excelfile_sheet="Main table";apply_chlacalibration=F;setsinsupergroups=F;apply_lengthcalibration=F
 
-# working_directory="../../FlowCytometry/";concatenatedfile_name="newfunctionconcatenate.csv";writetoexcel=T;excelfile_name="KOSMOS_Kiel_spring_2024_FlowCytometry_Sievers_R - Copy.xlsx";apply_chlacalibration=T;setsinsupergroups=T;apply_lengthcalibration=T
+# working_directory="../../FlowCytometry/";include_easyclus_metadata=T;concatenatedfile_name="newfunctionconcatenate.csv";writetoexcel=T;excelfile_name="KOSMOS_Kiel_spring_2024_FlowCytometry_Sievers_R - Copy.xlsx";apply_chlacalibration=T;setsinsupergroups=T;apply_lengthcalibration=T
 
 
 R2HUconcatenateFlowdata=function(working_directory="./",
                                  rawfile_folder="export/set-statistics/",
                                  rawfile_identifier="set_statistics_",
 
+                                 include_easyclus_metadata=F,
+                                 easyclus_metadata_filename="KOSMOS_Kiel_spring_2024_metadata-cleaned-EasyClus.csv",
+
                                  writetofile=T,
-                                 concatenatedfile_folder="",
                                  concatenatedfile_name="concatenated_clean_data.csv",
 
                                  writetoexcel=F,
@@ -38,6 +40,7 @@ R2HUconcatenateFlowdata=function(working_directory="./",
                                  excelfile_sheet="Main table",
 
                                  apply_chlacalibration=F,
+                                 exclude_day_from_biomass=NULL,
                                  setsinsupergroups=F,
                                  apply_lengthcalibration=F){
 
@@ -62,6 +65,14 @@ R2HUconcatenateFlowdata=function(working_directory="./",
     i=i+1;listofDF[[i]]=newdata
   }
   concatenated_data=bind_rows(listofDF)
+
+
+  # read in more metadata from easyclus
+  if(include_easyclus_metadata){
+    metadata=read.csv(paste0(working_directory,easyclus_metadata_filename))
+    concatenated_data=merge(concatenated_data,metadata,by="Filename",by.y="fname",all=T)
+    rm(original_columns,new_columns,metadata)
+  }
 
 
   # disect the filenames to fill meta data columns
@@ -130,9 +141,8 @@ R2HUconcatenateFlowdata=function(working_directory="./",
     concatenated_data$ChlaProxyRaw=concatenated_data$'Concentration [n/\u00b5l]'*concatenated_data$`Mean FL Red Total`
     concatenated_data$ChlaProxyRaw[concatenated_data$'Concentration [n/\u00b5l]'==0]=0
 
-    # exclude M1 systematically from biomass calculations
-    concatenated_data$ChlaProxyRaw[concatenated_data$Day==1]=NA
-
+    # exclude a day (T1 for kiel spring) systematically from biomass calculations
+    concatenated_data$ChlaProxyRaw[concatenated_data$Day %in% exclude_day_from_biomass]=NA
 
     if(apply_chlacalibration){
       ### calibrate Chla proxy to other data set
@@ -316,14 +326,14 @@ R2HUconcatenateFlowdata=function(working_directory="./",
 
   #export the summary file
   if(writetofile){
-    write.csv(concatenated_data,paste0(working_directory,concatenatedfile_folder,concatenatedfile_name),row.names = FALSE)
+    write.csv(concatenated_data,paste0(working_directory,concatenatedfile_name),row.names = FALSE)
   }
 
   # write to excel if desired
   if(writetoexcel){
-    wb <- loadWorkbook(paste0(working_directory,concatenatedfile_folder,excelfile_name))
+    wb <- loadWorkbook(paste0(working_directory,excelfile_name))
     writeData(wb,excelfile_sheet,concatenated_data)
-    saveWorkbook(wb,paste0(working_directory,concatenatedfile_folder,excelfile_name),overwrite = TRUE)
+    saveWorkbook(wb,paste0(working_directory,excelfile_name),overwrite = TRUE)
     rm(wb)
   }
 

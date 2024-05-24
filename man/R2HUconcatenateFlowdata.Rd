@@ -8,19 +8,21 @@ R2HUconcatenateFlowdata(
   working_directory = "./",
   rawfile_folder = "export/set-statistics/",
   rawfile_identifier = "set_statistics_",
+  include_easyclus_metadata = F,
+  easyclus_metadata_filename = "KOSMOS_Kiel_spring_2024_metadata-cleaned-EasyClus.csv",
   writetofile = T,
-  concatenatedfile_folder = "",
   concatenatedfile_name = "concatenated_clean_data.csv",
   writetoexcel = F,
   excelfile_name = "KOSMOS_Kiel_spring_2024_FlowCytometry_Sievers_R.xlsx",
   excelfile_sheet = "Main table",
   apply_chlacalibration = F,
+  exclude_day_from_biomass = NULL,
   setsinsupergroups = F,
   apply_lengthcalibration = F
 )
 }
 \arguments{
-\item{working_directory, rawfile_folder, rawfile_identifier, writetofile, concatenatedfile_folder, concatenatedfile_name, writetoexcel, excelfile_name, excelfile_sheet, apply_chlacalibration, setsinsupergroups, apply_lengthcalibration}{\code{(to be updated)}}
+\item{working_directory, rawfile_folder, rawfile_identifier, writetofile, concatenatedfile_name, writetoexcel, excelfile_name, excelfile_sheet, apply_chlacalibration, setsinsupergroups, apply_lengthcalibration}{\code{(to be updated)}}
 }
 \value{
 Yields a clean data frame of the standard layout and writes to files if selected.
