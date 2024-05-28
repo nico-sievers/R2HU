@@ -62,7 +62,7 @@ dtupdate::github_update()
 
 # This will list all packages installed from GitHub
 # with their current and latest version numbers.
-# Check that "KOSMOSplotR" is on the list. If any
+# Check that R2HU is on the list. If any
 # package is not up-to-date, run
 dtupdate::github_update(T,F)
 # to update them. Should that cause an error try
@@ -80,6 +80,10 @@ dtupdate::github_update(T,F)
 
 ### USAGE
 
-# R2HUconcatenateFlowdata() function, check
+
+help(package="R2HU")
+
 ?R2HUconcatenateFlowdata()
+
+?R2HUpurifyEasyClusMetaData()
 

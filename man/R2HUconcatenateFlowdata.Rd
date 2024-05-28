@@ -8,17 +8,17 @@ R2HUconcatenateFlowdata(
   working_directory = "./",
   rawfile_folder = "export/set-statistics/",
   rawfile_identifier = "set_statistics_",
-  include_easyclus_metadata = F,
+  include_easyclus_metadata = FALSE,
   easyclus_metadata_filename = "KOSMOS_Kiel_spring_2024_metadata-cleaned-EasyClus.csv",
-  writetofile = T,
+  writetofile = TRUE,
   concatenatedfile_name = "concatenated_clean_data.csv",
-  writetoexcel = F,
+  writetoexcel = FALSE,
   excelfile_name = "KOSMOS_Kiel_spring_2024_FlowCytometry_Sievers_R.xlsx",
   excelfile_sheet = "Main table",
-  apply_chlacalibration = F,
+  apply_chlacalibration = FALSE,
   exclude_day_from_biomass = NULL,
-  setsinsupergroups = F,
-  apply_lengthcalibration = F
+  setsinsupergroups = FALSE,
+  apply_lengthcalibration = FALSE
 )
 }
 \arguments{

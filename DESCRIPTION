@@ -1,12 +1,12 @@
 Package: R2HU
 Type: Package
 Title: Nico's various collected R-tools for science-related data handling
-Version: 1.1.0
+Version: 1.1.1
 License: GPL
 Authors@R: person("Nico", "Sievers", email = "nico.sievers@gmx.net", role = c("cre","aut"))
 Maintainer: Nico Sievers <nico.sievers@gmx.net>
 Date: 2024-03-12
-Description: This is a collection of functions that I use in my private scripts and might share on request.
+Description: R2HU ("R to help You") is a collection of functions that I use in my private scripts and might share on request.
 URL: https://github.com/nico-sievers/R2HU
 BugReports: https://github.com/nico-sievers/R2HU
 Encoding: UTF-8
