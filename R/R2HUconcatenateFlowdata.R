@@ -47,6 +47,9 @@ R2HUconcatenateFlowdata=function(working_directory="./",
                                  setsinsupergroups=FALSE,
                                  apply_lengthcalibration=FALSE){
 
+  plot(1,1)
+  warning("test")
+  stop("fuck")
 
 
   # assemble treatment combinations
@@ -179,9 +182,6 @@ R2HUconcatenateFlowdata=function(working_directory="./",
         if(T){
           # concatenated_data=concatenated_data[,c(1:11,(ncol(concatenated_data)-15):ncol(concatenated_data))]
 
-          plot(1,1)
-          warning("test")
-
           ggplot(tocalibratelarge,aes(ChlorophyllA,ChlaProxyRaw,col=Day))+
             geom_point()+
             geom_abline(slope=lmlarge$coefficients["ChlorophyllA"],intercept=lmlarge$coefficients["(Intercept)"])+
@@ -300,6 +300,6 @@ R2HUconcatenateFlowdata=function(working_directory="./",
   }
 
   rm(treatment_combinations,available_files,Delta_TA,filename,mesos,Mineral,num_mesos)
-  #return(concatenated_data)
+  return(concatenated_data)
 
 }
