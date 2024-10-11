@@ -47,9 +47,6 @@ R2HUconcatenateFlowdata=function(working_directory="./",
                                  setsinsupergroups=FALSE,
                                  apply_lengthcalibration=FALSE){
 
-  plot(1,1)
-  warning("test")
-  stop("fuck")
 
 
   # assemble treatment combinations
@@ -182,14 +179,14 @@ R2HUconcatenateFlowdata=function(working_directory="./",
         if(T){
           # concatenated_data=concatenated_data[,c(1:11,(ncol(concatenated_data)-15):ncol(concatenated_data))]
 
-          ggplot(tocalibratelarge,aes(ChlorophyllA,ChlaProxyRaw,col=Day))+
+          print(ggplot(tocalibratelarge,aes(ChlorophyllA,ChlaProxyRaw,col=Day))+
             geom_point()+
             geom_abline(slope=lmlarge$coefficients["ChlorophyllA"],intercept=lmlarge$coefficients["(Intercept)"])+
-            labs(title="Chlorophyll calibration - large setting",col="Day")
-          ggplot(tocalibratesmall,aes(ChlorophyllA,ChlaProxyRaw,col=Day))+
+            labs(title="Chlorophyll calibration - large setting",col="Day"))
+          print(ggplot(tocalibratesmall,aes(ChlorophyllA,ChlaProxyRaw,col=Day))+
             geom_point()+
             geom_abline(slope=lmsmall$coefficients["ChlorophyllA"],intercept=lmsmall$coefficients["(Intercept)"])+
-            labs(title="Chlorophyll calibration - small setting",col="Day")
+            labs(title="Chlorophyll calibration - small setting",col="Day"))
         }
 
         ## calibrate the two settings agains another
@@ -260,7 +257,9 @@ R2HUconcatenateFlowdata=function(working_directory="./",
 
     #correlate Chla proxy and concentration to see trends in chl/cell
     concatenated_data$FLredpercell=concatenated_data$`Mean FL Red Total`
+    #concatenated_data$Chlapercell[concatenated_data$concatenated_data$'Concentration [n/\u00b5l]'!=0]=concatenated_data$ChlaProxyUse/concatenated_data$'Concentration [n/\u00b5l]'
     concatenated_data$Chlapercell=concatenated_data$ChlaProxyUse/concatenated_data$'Concentration [n/\u00b5l]'
+    concatenated_data$Chlapercell[concatenated_data$Count==0]=0
 
     concatenated_data=subset(concatenated_data,select=-ChlaProxyUse)
   }
