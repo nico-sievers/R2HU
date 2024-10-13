@@ -205,10 +205,12 @@ R2HUconcatenateFlowdata=function(working_directory="./",
 
       # decide whether to work with the raw or the calibrated proxy for all further calculations
       ###concatenated_data$ChlaProxyUse=concatenated_data$ChlaProxyRaw
-      concatenated_data$ChlaProxyUse=concatenated_data$ChlaProxyCalibrated
+      # concatenated_data$ChlaProxyUse=concatenated_data$ChlaProxyCalibrated
     }else{
-      concatenated_data$ChlaProxyUse=concatenated_data$ChlaProxyRaw
+      # concatenated_data$ChlaProxyUse=concatenated_data$ChlaProxyRaw
     }
+    concatenated_data$ChlaProxyUse=concatenated_data$ChlaProxyRaw
+
 
     refset="All cells"
     concatenated_data$ChlaProxyRefSet=NA
@@ -255,10 +257,11 @@ R2HUconcatenateFlowdata=function(working_directory="./",
         select(-c(Supergroup,CombinedBiomassContribution))
     }
 
+
     #correlate Chla proxy and concentration to see trends in chl/cell
     concatenated_data$FLredpercell=concatenated_data$`Mean FL Red Total`
     #concatenated_data$Chlapercell[concatenated_data$concatenated_data$'Concentration [n/\u00b5l]'!=0]=concatenated_data$ChlaProxyUse/concatenated_data$'Concentration [n/\u00b5l]'
-    concatenated_data$Chlapercell=concatenated_data$ChlaProxyUse/concatenated_data$'Concentration [n/\u00b5l]'
+    concatenated_data$Chlapercell=concatenated_data$ChlaProxyCalibrated/concatenated_data$'Concentration [n/\u00b5l]'
     concatenated_data$Chlapercell[concatenated_data$Count==0]=0
 
     concatenated_data=subset(concatenated_data,select=-ChlaProxyUse)
