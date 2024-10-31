@@ -24,6 +24,11 @@
 
 # working_directory="../../FlowCytometry/";include_easyclus_metadata=T;concatenatedfile_name="newfunctionconcatenate.csv";writetoexcel=T;excelfile_name="KOSMOS_Kiel_spring_2024_FlowCytometry_Sievers_R - Copy.xlsx";apply_chlacalibration=T;setsinsupergroups=T;apply_lengthcalibration=T
 
+# working_directory="../../KOSMOS_2024_autumn_Kiel_FlowCytometry/";writetoexcel=T;excelfile_name="KOSMOS_Kiel_autumn_2024_FlowCytometry_Sievers_R.xlsx";apply_chlacalibration=T;chlacalfile_name="KOSMOS_Kiel_autumn_2024_Chlorophyll_a.xlsx"
+
+# library(utils);library(dplyr);library(readr);library(openxlsx);library(readxl);library(stats)
+
+
 
 R2HUconcatenateFlowdata=function(working_directory="./",
 
@@ -51,14 +56,35 @@ R2HUconcatenateFlowdata=function(working_directory="./",
 
   # assemble treatment combinations
   if(T){
-    num_mesos=13
-    mesos=c(paste("M",1:(num_mesos-1),sep=""),"Fjord")
-    Mineral=c(rep(c("Ca(OH)2","Mg(OH)2"),num_mesos/2),NA)
-    Delta_TA=c(450, 750, 0, 300, 600, 0, 150, 450, 750, 150, 300, 600, NA)
-    treatment_combinations=array(c(mesos,Mineral,Delta_TA),
-                                 dim=c(num_mesos,3),
-                                 dimnames=list(1:num_mesos,c("Mesocosm","Mineral","Delta_TA")))
+    # num_mesos=13
+    # mesos=c(paste("M",1:(num_mesos-1),sep=""),"Fjord")
+    # Mineral=c(rep(c("Ca(OH)2","Mg(OH)2"),num_mesos/2),NA)
+    # Delta_TA=c(450, 750, 0, 300, 600, 0, 150, 450, 750, 150, 300, 600, NA)
+    # treatment_combinations=array(c(mesos,Mineral,Delta_TA),
+    #                              dim=c(num_mesos,3),
+    #                              dimnames=list(1:num_mesos,c("Mesocosm","Mineral","Delta_TA")))
+
+    tmp=KOSMOScurrentStyletable$mesolist
+
+    # need to figure out which order they are in. this is a shit show.
+    tmp=gsub("/","",tmp,)
+    tmp=gsub("  "," ",tmp)
+    tmp=strsplit(tmp," ")
+    #tmp=tmp[lapply(tmp,grepl,pattern="/")]
+    mesopos=grep("^[mM]\\d{1,2}$",tmp[[1]])
+    TApos=grep("^\\d{1,4}$",tmp[[1]][-mesopos])
+    mineralpos=(1:3)[-c(mesopos,TApos)]
+
+    Mesocosm=unlist(lapply(tmp,"[",mesopos))
+    Mineral=unlist(lapply(tmp,"[",mineralpos))
+    Delta_TA=unlist(lapply(tmp,"[",TApos))
+    treatment_combinations=cbind(Mesocosm,Mineral,Delta_TA)
+
+
+    rm(Delta_TA,Mesocosm,Mineral)
   }
+
+
 
 
   available_files=list.files(paste0(working_directory,rawfile_folder),rawfile_identifier)
@@ -109,6 +135,14 @@ R2HUconcatenateFlowdata=function(working_directory="./",
       concatenated_data$Delta_TA[concatenated_data$Mesocosm_Name==meso]=treatment_combinations[treatment_combinations[,"Mesocosm"]==meso,"Delta_TA"]
     }
     rm(meso)
+
+    ### this was total crap on my end
+    #deal with any control you find by checking what you have in the style cheat
+    #controlentries=!(concatenated_data$Mesocosm_Name %in% treatment_combinations$Mesocosm)
+    #concatenated_data$Mineral[controlentries]=NA
+    #concatenated_data$Delta_TA[controlentries]=NA
+
+    # paste the rest together based on what you got
     concatenated_data$Treatment=paste(concatenated_data$Delta_TA,"/",concatenated_data$Mineral)
     concatenated_data$Treat_Meso=paste(concatenated_data$Treatment,"/",concatenated_data$Mesocosm_Name)
     concatenated_data$Treat_Meso[is.na(concatenated_data$Mineral)]=concatenated_data$Mesocosm_Name[is.na(concatenated_data$Mineral)]
@@ -150,65 +184,69 @@ R2HUconcatenateFlowdata=function(working_directory="./",
     if(apply_chlacalibration){
       ### calibrate Chla proxy to other data set
 
+      chlcal=read_excel(paste0(working_directory,chlacalfile_name),sheet=chlacalfile_sheet,na=c("",NA))
+      chlcal$Day=factor(chlcal$Day,c(1:3,seq(5,33,2)))
+
+      concatenated_data=left_join(concatenated_data,chlcal)
+
+      colnr=ncol(concatenated_data)
+      tocalibrate=concatenated_data[concatenated_data$Set=="All cells" & concatenated_data$Mesocosm!="Fjord",c(1:11,(colnr-15):colnr)]
+      names(tocalibrate)[length(names(tocalibrate))]="ChlorophyllA" # only rename because of the linear models below
+
+      tocalibratelarge=tocalibrate[tocalibrate$Settings=="large",]
+      tocalibratesmall=tocalibrate[tocalibrate$Settings=="small",]
+
+      lmlarge=lm(ChlaProxyRaw~ChlorophyllA,tocalibratelarge)
+      lmsmall=lm(ChlaProxyRaw~ChlorophyllA,tocalibratesmall)
+
+      concatenated_data$ChlaProxyCalibrated=NA
+      #y=mx+t
+      #x=(y-t)/m
+      concatenated_data$ChlaProxyCalibrated[concatenated_data$Settings=="large"]=(concatenated_data$ChlaProxyRaw[concatenated_data$Settings=="large"]-lmlarge$coefficients[[1]])/lmlarge$coefficients[[2]]
+      concatenated_data$ChlaProxyCalibrated[concatenated_data$Settings=="small"]=(concatenated_data$ChlaProxyRaw[concatenated_data$Settings=="small"]-lmsmall$coefficients[[1]])/lmsmall$coefficients[[2]]
+
+      # QC
       if(T){
-        chlcal=read_excel(paste0(working_directory,chlacalfile_name),sheet=chlacalfile_sheet,na=c("",NA))
-        chlcal$Day=factor(chlcal$Day,c(1:3,seq(5,33,2)))
+        # concatenated_data=concatenated_data[,c(1:11,(ncol(concatenated_data)-15):ncol(concatenated_data))]
 
-        if(T){
-          concatenated_data=left_join(concatenated_data,chlcal)
-
-          colnr=ncol(concatenated_data)
-          tocalibrate=concatenated_data[concatenated_data$Set=="All cells" & concatenated_data$Mesocosm!="Fjord",c(1:11,(colnr-15):colnr)]
-          names(tocalibrate)[length(names(tocalibrate))]="ChlorophyllA" # only rename because of the linear models below
-
-          tocalibratelarge=tocalibrate[tocalibrate$Settings=="large",]
-          tocalibratesmall=tocalibrate[tocalibrate$Settings=="small",]
-
-          lmlarge=lm(ChlaProxyRaw~ChlorophyllA,tocalibratelarge)
-          lmsmall=lm(ChlaProxyRaw~ChlorophyllA,tocalibratesmall)
-
-          concatenated_data$ChlaProxyCalibrated=NA
-          #y=mx+t
-          #x=(y-t)/m
-          concatenated_data$ChlaProxyCalibrated[concatenated_data$Settings=="large"]=(concatenated_data$ChlaProxyRaw[concatenated_data$Settings=="large"]-lmlarge$coefficients[[1]])/lmlarge$coefficients[[2]]
-          concatenated_data$ChlaProxyCalibrated[concatenated_data$Settings=="small"]=(concatenated_data$ChlaProxyRaw[concatenated_data$Settings=="small"]-lmsmall$coefficients[[1]])/lmsmall$coefficients[[2]]
-
-        }
-
-        # QC
-        if(T){
-          # concatenated_data=concatenated_data[,c(1:11,(ncol(concatenated_data)-15):ncol(concatenated_data))]
-
-          print(ggplot(tocalibratelarge,aes(ChlorophyllA,ChlaProxyRaw,col=Day))+
-            geom_point()+
-            geom_abline(slope=lmlarge$coefficients["ChlorophyllA"],intercept=lmlarge$coefficients["(Intercept)"])+
-            labs(title="Chlorophyll calibration - large setting",col="Day"))
-          print(ggplot(tocalibratesmall,aes(ChlorophyllA,ChlaProxyRaw,col=Day))+
-            geom_point()+
-            geom_abline(slope=lmsmall$coefficients["ChlorophyllA"],intercept=lmsmall$coefficients["(Intercept)"])+
-            labs(title="Chlorophyll calibration - small setting",col="Day"))
-        }
-
-        ## calibrate the two settings agains another
-        if(T){
-          smcomp=concatenated_data[concatenated_data$Set=="All cells",c("Day","Mesocosm","Settings","ChlaProxyRaw")]
-          smcomplong=pivot_wider(smcomp,names_from="Settings",values_from="ChlaProxyRaw")
-          lmcomp=lm(large~small,smcomplong)
-          ggplot(smcomplong,aes(small,large,col=Day))+
-            geom_point()+
-            geom_abline(slope=lmcomp$coefficients["small"],intercept=lmcomp$coefficients["(Intercept)"])+
-            labs(title="Correlation of ChlaProxy between large and small setting",col="Day")
-        }
-
-        rm(colnr,tocalibrate,tocalibratelarge,tocalibratesmall,lmlarge,lmsmall)
+        print(ggplot(tocalibratelarge,aes(ChlorophyllA,ChlaProxyRaw,col=Day))+
+          geom_point()+
+          geom_abline(slope=lmlarge$coefficients["ChlorophyllA"],intercept=lmlarge$coefficients["(Intercept)"])+
+          #?scale_y_continuous()
+          labs(title="Chlorophyll calibration - large setting",col="Day"))
+        print(ggplot(tocalibratesmall,aes(ChlorophyllA,ChlaProxyRaw,col=Day))+
+          geom_point()+
+          geom_abline(slope=lmsmall$coefficients["ChlorophyllA"],intercept=lmsmall$coefficients["(Intercept)"])+
+          labs(title="Chlorophyll calibration - small setting",col="Day"))
       }
+
+      ## calibrate the two settings agains another
+      if(T){
+        smcomp=concatenated_data[concatenated_data$Set=="All cells",c("Day","Mesocosm","Settings","ChlaProxyRaw")]
+        smcomplong=pivot_wider(smcomp,names_from="Settings",values_from="ChlaProxyRaw")
+        lmcomp=lm(large~small,smcomplong)
+        print(ggplot(smcomplong,aes(small,large,col=Day))+
+          geom_point()+
+          geom_abline(slope=lmcomp$coefficients["small"],intercept=lmcomp$coefficients["(Intercept)"])+
+          labs(title="Correlation of ChlaProxy between large and small setting",col="Day"))
+      }
+
+      rm(colnr,tocalibrate,tocalibratelarge,tocalibratesmall,lmlarge,lmsmall)
 
       # decide whether to work with the raw or the calibrated proxy for all further calculations
       ###concatenated_data$ChlaProxyUse=concatenated_data$ChlaProxyRaw
       # concatenated_data$ChlaProxyUse=concatenated_data$ChlaProxyCalibrated
+
+
+      #correlate Chla proxy and concentration to see trends in chl/cell
+      concatenated_data$Chlapercell=concatenated_data$ChlaProxyCalibrated/concatenated_data$'Concentration [n/\u00b5l]'
+      concatenated_data$Chlapercell[concatenated_data$Count==0]=0
+
     }else{
-      # concatenated_data$ChlaProxyUse=concatenated_data$ChlaProxyRaw
+      concatenated_data$FLredpercell=concatenated_data$`Mean FL Red Total`
     }
+
+    ###tmp this is only because i quickly fixed something
     concatenated_data$ChlaProxyUse=concatenated_data$ChlaProxyRaw
 
 
@@ -257,13 +295,6 @@ R2HUconcatenateFlowdata=function(working_directory="./",
         select(-c(Supergroup,CombinedBiomassContribution))
     }
 
-
-    #correlate Chla proxy and concentration to see trends in chl/cell
-    concatenated_data$FLredpercell=concatenated_data$`Mean FL Red Total`
-    #concatenated_data$Chlapercell[concatenated_data$concatenated_data$'Concentration [n/\u00b5l]'!=0]=concatenated_data$ChlaProxyUse/concatenated_data$'Concentration [n/\u00b5l]'
-    concatenated_data$Chlapercell=concatenated_data$ChlaProxyCalibrated/concatenated_data$'Concentration [n/\u00b5l]'
-    concatenated_data$Chlapercell[concatenated_data$Count==0]=0
-
     concatenated_data=subset(concatenated_data,select=-ChlaProxyUse)
   }
 
@@ -301,7 +332,7 @@ R2HUconcatenateFlowdata=function(working_directory="./",
     rm(wb)
   }
 
-  rm(treatment_combinations,available_files,Delta_TA,filename,mesos,Mineral,num_mesos)
+  rm(treatment_combinations,available_files,filename)
   return(concatenated_data)
 
 }
