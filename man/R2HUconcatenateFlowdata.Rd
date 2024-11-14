@@ -20,6 +20,9 @@ R2HUconcatenateFlowdata(
   chlacalfile_sheet = "Main table",
   exclude_day_from_biomass = NULL,
   setsinsupergroups = FALSE,
+  calculate_percent_change = FALSE,
+  baseline_days = 1:3,
+  percent_change_vars = c("Concentration [n/µl]", "ChlaProxyRaw"),
   apply_lengthcalibration = FALSE
 )
 }

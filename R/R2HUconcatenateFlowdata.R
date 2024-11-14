@@ -12,7 +12,7 @@
 #' @export
 #'
 #' @importFrom utils View write.csv
-#' @importFrom dplyr bind_rows
+#' @importFrom dplyr bind_rows group_by mutate ungroup
 #' @importFrom readr read_csv
 #' @importFrom openxlsx loadWorkbook writeData saveWorkbook
 #' @importFrom readxl read_excel
@@ -20,13 +20,14 @@
 
 
 # for debugging:
-# working_directory="./";rawfile_folder="export/set-statistics/";rawfile_identifier="set_statistics_";include_easyclus_metadata=F;easyclus_metadata_filename="KOSMOS_Kiel_spring_2024_metadata-cleaned-EasyClus.csv";writetofile=T;concatenatedfile_name="concatenated_clean_data.csv";writetoexcel=F;excelfile_name="KOSMOS_Kiel_spring_2024_FlowCytometry_Sievers_R.xlsx";excelfile_sheet="Main table";apply_chlacalibration=F;setsinsupergroups=F;apply_lengthcalibration=F
+# working_directory="./";rawfile_folder="export/set-statistics/";rawfile_identifier="set_statistics_";include_easyclus_metadata=F;easyclus_metadata_filename="KOSMOS_Kiel_spring_2024_metadata-cleaned-EasyClus.csv";writetofile=T;concatenatedfile_name="concatenated_clean_data.csv";writetoexcel=F;excelfile_name="KOSMOS_Kiel_spring_2024_FlowCytometry_Sievers_R.xlsx";excelfile_sheet="Main table";apply_chlacalibration=F;chlacalfile_sheet="Main table";setsinsupergroups=F;exclude_day_from_biomass=NULL;apply_lengthcalibration=F;calculate_percent_change=FALSE;baseline_days=1:3;percent_change_vars=c("Concentration [n/\u00b5l]","ChlaProxyRaw");library(utils);library(dplyr);library(readr);library(openxlsx);library(readxl);library(stats);library(KOSMOSplotR)
 
 # working_directory="../../FlowCytometry/";include_easyclus_metadata=T;concatenatedfile_name="newfunctionconcatenate.csv";writetoexcel=T;excelfile_name="KOSMOS_Kiel_spring_2024_FlowCytometry_Sievers_R - Copy.xlsx";apply_chlacalibration=T;setsinsupergroups=T;apply_lengthcalibration=T
 
 # working_directory="../../KOSMOS_2024_autumn_Kiel_FlowCytometry/";writetoexcel=T;excelfile_name="KOSMOS_Kiel_autumn_2024_FlowCytometry_Sievers_R.xlsx";apply_chlacalibration=T;chlacalfile_name="KOSMOS_Kiel_autumn_2024_Chlorophyll_a.xlsx"
 
-# library(utils);library(dplyr);library(readr);library(openxlsx);library(readxl);library(stats)
+# KOSMOSselect("quartz");working_directory="../../KOSMOS_2024_Kiel_Quartz-experiment_FlowCytometry/";writetoexcel=T;excelfile_name="KOSMOS_Kiel_2024_Quartz-side-experiment_FlowCytometry_Sievers_R";apply_chlacalibration=T;chlacalfile_name="KOSMOS_Kiel_2024_Quartz-Side-experiment_Chlorophyll.xlsx"
+
 
 
 
@@ -50,6 +51,11 @@ R2HUconcatenateFlowdata=function(working_directory="./",
                                  chlacalfile_sheet="Main table",
                                  exclude_day_from_biomass=NULL,
                                  setsinsupergroups=FALSE,
+
+                                 calculate_percent_change=FALSE,
+                                 baseline_days=1:3,
+                                 percent_change_vars=c("Concentration [n/\u00b5l]","ChlaProxyRaw"),
+
                                  apply_lengthcalibration=FALSE){
 
 
@@ -72,16 +78,16 @@ R2HUconcatenateFlowdata=function(working_directory="./",
     tmp=strsplit(tmp," ")
     #tmp=tmp[lapply(tmp,grepl,pattern="/")]
     mesopos=grep("^[mM]\\d{1,2}$",tmp[[1]])
-    TApos=grep("^\\d{1,4}$",tmp[[1]][-mesopos])
-    mineralpos=(1:3)[-c(mesopos,TApos)]
+    conpos=grep("^\\d{1,4}$",tmp[[1]][-mesopos])
+    catpos=(1:3)[-c(mesopos,conpos)]
 
     Mesocosm=unlist(lapply(tmp,"[",mesopos))
-    Mineral=unlist(lapply(tmp,"[",mineralpos))
-    Delta_TA=unlist(lapply(tmp,"[",TApos))
-    treatment_combinations=cbind(Mesocosm,Mineral,Delta_TA)
+    CatVar=unlist(lapply(tmp,"[",catpos))
+    ConVar=unlist(lapply(tmp,"[",conpos))
+    treatment_combinations=cbind(Mesocosm,CatVar,ConVar)
 
 
-    rm(Delta_TA,Mesocosm,Mineral)
+    rm(ConVar,Mesocosm,CatVar)
   }
 
 
@@ -90,9 +96,13 @@ R2HUconcatenateFlowdata=function(working_directory="./",
   available_files=list.files(paste0(working_directory,rawfile_folder),rawfile_identifier)
 
   listofDF=NULL;i=0;for(filename in available_files) {
-    newdata=read_csv(paste0(working_directory,rawfile_folder,filename))
+    newdata=read_csv(paste0(working_directory,rawfile_folder,filename),show_col_types=F)
     i=i+1;listofDF[[i]]=newdata
   }
+  if(i==1){message("One raw file processed.")
+  }else if(i>1){message(paste0("Concatenated ",i," raw files."))
+  }else{stop("No raw files found!")}
+
   concatenated_data=bind_rows(listofDF)
 
 
@@ -128,11 +138,11 @@ R2HUconcatenateFlowdata=function(working_directory="./",
 
 
     #assign treatments to the mesocosm number
-    concatenated_data$Mineral=NA
-    concatenated_data$Delta_TA=NA
+    concatenated_data[[KOSMOScurrentCategoricalVar]]=NA
+    concatenated_data[[KOSMOScurrentContinuousVar]]=NA
     for(meso in treatment_combinations[,"Mesocosm"]){
-      concatenated_data$Mineral[concatenated_data$Mesocosm_Name==meso]=treatment_combinations[treatment_combinations[,"Mesocosm"]==meso,"Mineral"]
-      concatenated_data$Delta_TA[concatenated_data$Mesocosm_Name==meso]=treatment_combinations[treatment_combinations[,"Mesocosm"]==meso,"Delta_TA"]
+      concatenated_data[concatenated_data$Mesocosm_Name==meso,KOSMOScurrentCategoricalVar]=treatment_combinations[treatment_combinations[,"Mesocosm"]==meso,"CatVar"]
+      concatenated_data[concatenated_data$Mesocosm_Name==meso,KOSMOScurrentContinuousVar]=treatment_combinations[treatment_combinations[,"Mesocosm"]==meso,"ConVar"]
     }
     rm(meso)
 
@@ -143,9 +153,9 @@ R2HUconcatenateFlowdata=function(working_directory="./",
     #concatenated_data$Delta_TA[controlentries]=NA
 
     # paste the rest together based on what you got
-    concatenated_data$Treatment=paste(concatenated_data$Delta_TA,"/",concatenated_data$Mineral)
+    concatenated_data$Treatment=paste(concatenated_data[[KOSMOScurrentContinuousVar]],"/",concatenated_data[[KOSMOScurrentCategoricalVar]])
     concatenated_data$Treat_Meso=paste(concatenated_data$Treatment,"/",concatenated_data$Mesocosm_Name)
-    concatenated_data$Treat_Meso[is.na(concatenated_data$Mineral)]=concatenated_data$Mesocosm_Name[is.na(concatenated_data$Mineral)]
+    concatenated_data$Treat_Meso[is.na(concatenated_data[[KOSMOScurrentCategoricalVar]])]=concatenated_data$Mesocosm_Name[is.na(concatenated_data[[KOSMOScurrentCategoricalVar]])]
 
 
     #rearrange columns according to the future excel sheet
@@ -157,8 +167,8 @@ R2HUconcatenateFlowdata=function(working_directory="./",
 
   # fix datastructure - only what is necessary here
   names(concatenated_data)[11]="Concentration [n/\u00b5l]"
-  concatenated_data$Day=factor(concatenated_data$Day,c(1:3,seq(5,33,2)))
-  concatenated_data$Delta_TA=as.integer(concatenated_data$Delta_TA)
+  concatenated_data$Day=factor(concatenated_data$Day,levels=sort(as.numeric(unique(concatenated_data$Day))))
+  concatenated_data[[KOSMOScurrentContinuousVar]]=as.integer(concatenated_data[[KOSMOScurrentContinuousVar]])
   concatenated_data$Set=sub("/","_",concatenated_data$Set) #replace any "/" that stupid me used in set names
 
   #check that there are no duplicates
@@ -171,21 +181,23 @@ R2HUconcatenateFlowdata=function(working_directory="./",
     rm(tmp)
   }
 
-
   # the various Chla proxies, their references, and normalisations
   if(T){
     # use meanRED*conc to account for volume changes
     concatenated_data$ChlaProxyRaw=concatenated_data$'Concentration [n/\u00b5l]'*concatenated_data$`Mean FL Red Total`
     concatenated_data$ChlaProxyRaw[concatenated_data$'Concentration [n/\u00b5l]'==0]=0
 
-    # exclude a day (T1 for kiel spring) systematically from biomass calculations
+    # exclude a day (i.e. T1 for kiel spring) systematically from biomass calculations
     concatenated_data$ChlaProxyRaw[concatenated_data$Day %in% exclude_day_from_biomass]=NA
+
+    # get the standard per-cell-proxy
+    concatenated_data$FLredpercell=concatenated_data$`Mean FL Red Total`
 
     if(apply_chlacalibration){
       ### calibrate Chla proxy to other data set
 
       chlcal=read_excel(paste0(working_directory,chlacalfile_name),sheet=chlacalfile_sheet,na=c("",NA))
-      chlcal$Day=factor(chlcal$Day,c(1:3,seq(5,33,2)))
+      chlcal$Day=factor(chlcal$Day)
 
       concatenated_data=left_join(concatenated_data,chlcal)
 
@@ -233,22 +245,16 @@ R2HUconcatenateFlowdata=function(working_directory="./",
 
       rm(colnr,tocalibrate,tocalibratelarge,tocalibratesmall,lmlarge,lmsmall)
 
-      # decide whether to work with the raw or the calibrated proxy for all further calculations
-      ###concatenated_data$ChlaProxyUse=concatenated_data$ChlaProxyRaw
-      # concatenated_data$ChlaProxyUse=concatenated_data$ChlaProxyCalibrated
-
-
       #correlate Chla proxy and concentration to see trends in chl/cell
       concatenated_data$Chlapercell=concatenated_data$ChlaProxyCalibrated/concatenated_data$'Concentration [n/\u00b5l]'
       concatenated_data$Chlapercell[concatenated_data$Count==0]=0
 
-    }else{
-      concatenated_data$FLredpercell=concatenated_data$`Mean FL Red Total`
     }
-
-    ###tmp this is only because i quickly fixed something
+    # decide whether to work with the raw or the calibrated proxy for all further calculations
+    ###concatenated_data$ChlaProxyUse=concatenated_data$ChlaProxyRaw
+    # concatenated_data$ChlaProxyUse=concatenated_data$ChlaProxyCalibrated
+    ###tmp this is only because i quickly fixed the problem of normalising around with the negative values. if this doesnt cause any issues its probably the way to go
     concatenated_data$ChlaProxyUse=concatenated_data$ChlaProxyRaw
-
 
     refset="All cells"
     concatenated_data$ChlaProxyRefSet=NA
@@ -272,7 +278,6 @@ R2HUconcatenateFlowdata=function(working_directory="./",
     concatenated_data$ChlaProxyNormalisedSetting=concatenated_data$ChlaProxyUse/concatenated_data$ChlaProxyRefSetting
     concatenated_data$ChlaProxyNormalisedSet=concatenated_data$ChlaProxyUse/concatenated_data$ChlaProxyRefSet
 
-
     ### supergroups
     if(setsinsupergroups){
       concatenated_data$Supergroup=NA
@@ -281,13 +286,13 @@ R2HUconcatenateFlowdata=function(working_directory="./",
       concatenated_data$Supergroup[concatenated_data$Settings=="large" & concatenated_data$Set %in% c("high SSC","Nanophytoplankton (other)","elongated low-red nano")]="Nanophytoplankton"
       # supergroup subtable
       supergrouptable <- concatenated_data %>%
-        group_by(`Day`, `Mesocosm`, `Mineral`, `Delta_TA`, `Treat_Meso`, `Supergroup`) %>%
+        group_by(`Day`, `Mesocosm`, .(KOSMOScurrentCategoricalVar), .(KOSMOScurrentContinuousVar), `Treat_Meso`, `Supergroup`) %>%
         summarise(CombinedBiomassContribution = sum(ChlaProxyUse),.groups = "keep")# %>%
       #count()
       supergrouptable=supergrouptable[!is.na(supergrouptable$Supergroup),]
       # create all three relationsships
       supergrouprelationtable <- supergrouptable %>%
-        group_by(`Day`, `Mesocosm`, `Mineral`, `Delta_TA`, `Treat_Meso`) %>%
+        group_by(`Day`, `Mesocosm`, .(KOSMOScurrentCategoricalVar), .(KOSMOScurrentContinuousVar), `Treat_Meso`) %>%
         mutate(red_green = CombinedBiomassContribution[Supergroup=="Large Microphytoplankton"]/CombinedBiomassContribution[Supergroup=="Cryptophyte-like"]) %>%
         mutate(green_blue = CombinedBiomassContribution[Supergroup=="Cryptophyte-like"]/CombinedBiomassContribution[Supergroup=="Nanophytoplankton"]) %>%
         mutate(red_blue = CombinedBiomassContribution[Supergroup=="Large Microphytoplankton"]/CombinedBiomassContribution[Supergroup=="Nanophytoplankton"]) %>%
@@ -297,7 +302,6 @@ R2HUconcatenateFlowdata=function(working_directory="./",
 
     concatenated_data=subset(concatenated_data,select=-ChlaProxyUse)
   }
-
 
   #apply current length calibration
   if(apply_lengthcalibration){
@@ -318,6 +322,27 @@ R2HUconcatenateFlowdata=function(working_directory="./",
     rm(intercept,slope)
   }
 
+  # calculate the percent change for some parameters relative to a defined baseline
+  if(calculate_percent_change){
+    for (var in percent_change_vars) {
+      baseline_mean_col <- paste0("baseline_mean_", var)
+      percent_change_col <- paste0("percent_change_", var)
+
+      concatenated_data <- concatenated_data %>%
+        group_by(Mesocosm, Settings, Set) %>%
+        mutate(
+          !!baseline_mean_col := mean(.data[[var]][Day %in% baseline_days], na.rm = TRUE)
+        ) %>%
+        mutate(
+          !!percent_change_col := ifelse(
+            !is.na(.data[[baseline_mean_col]]),
+            (.data[[var]] - .data[[baseline_mean_col]]) / .data[[baseline_mean_col]] * 100,
+            NA_real_
+          )
+        )
+    }
+  }
+
 
   #export the summary file
   if(writetofile){
@@ -327,8 +352,36 @@ R2HUconcatenateFlowdata=function(working_directory="./",
   # write to excel if desired
   if(writetoexcel){
     wb <- loadWorkbook(paste0(working_directory,excelfile_name))
+
+    # # Determine the dimensions of the existing data in the sheet
+    # existing_data <- read.xlsx(paste0(working_directory, excelfile_name), sheet = excelfile_sheet)
+    # num_existing_rows <- nrow(existing_data)
+    # num_existing_cols <- ncol(existing_data)
+    # # Clear old data by writing an empty table over it, if necessary
+    # if (num_existing_rows > 0 && num_existing_cols > 0) {
+    #   blank_data <- matrix(NA, nrow = num_existing_rows, ncol = num_existing_cols)
+    #   writeData(wb, excelfile_sheet, blank_data, startCol = 1, startRow = 1)
+    # }
+
+    # Check if the sheet exists, and if so, remove it
+    if (excelfile_sheet %in% names(wb)) {
+      removeWorksheet(wb, excelfile_sheet)
+    }
+    # Add the worksheet back with the same name
+    addWorksheet(wb, excelfile_sheet)
+    # Get the current sheet names to adjust the order
+    current_sheets <- names(wb)
+    # Ensure the new sheet is in position 2
+    new_order <- c(current_sheets[1], excelfile_sheet, current_sheets[-1])
+    # Set the new order with worksheetOrder
+    worksheetOrder(wb) <- match(new_order, current_sheets)
+
+    # # Move the new sheet to position 2
+    # moveWorksheet(wb, sheet = excelfile_sheet, position = 2)
+
+    # Write the new data, save, and clean up
     writeData(wb,excelfile_sheet,concatenated_data)
-    saveWorkbook(wb,paste0(working_directory,excelfile_name),overwrite = TRUE)
+    saveWorkbook(wb,paste0(working_directory,excelfile_name),overwrite=TRUE)
     rm(wb)
   }
 
