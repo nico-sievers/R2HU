@@ -22,7 +22,7 @@ R2HUconcatenateFlowdata(
   setsinsupergroups = FALSE,
   calculate_percent_change = FALSE,
   baseline_days = 1:3,
-  percent_change_vars = c("Concentration [n/µl]", "ChlaProxyRaw"),
+  percent_change_vars = c("Concentration [n/µl]", "ChlaProxyRaw", "FLredpercell"),
   apply_lengthcalibration = FALSE
 )
 }

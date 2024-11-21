@@ -54,7 +54,7 @@ R2HUconcatenateFlowdata=function(working_directory="./",
 
                                  calculate_percent_change=FALSE,
                                  baseline_days=1:3,
-                                 percent_change_vars=c("Concentration [n/\u00b5l]","ChlaProxyRaw"),
+                                 percent_change_vars=c("Concentration [n/\u00b5l]","ChlaProxyRaw","FLredpercell"),
 
                                  apply_lengthcalibration=FALSE){
 
