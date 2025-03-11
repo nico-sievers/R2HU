@@ -28,7 +28,7 @@
 
 # KOSMOSselect("quartz");working_directory="../../KOSMOS_2024_Kiel_Quartz-experiment_FlowCytometry/";writetoexcel=T;excelfile_name="KOSMOS_Kiel_2024_Quartz-side-experiment_FlowCytometry_Sievers_R";apply_chlacalibration=T;chlacalfile_name="KOSMOS_Kiel_2024_Quartz-Side-experiment_Chlorophyll.xlsx"
 
-# KOSMOSselect("PIIP");writetoexcel=T;excelfile_name="OAEPIIP_FlowCytometry_Faucher_R.xlsx"
+
 
 
 R2HUconcatenateFlowdata=function(working_directory="./",
@@ -61,6 +61,7 @@ R2HUconcatenateFlowdata=function(working_directory="./",
 
 
   # assemble treatment combinations
+  if(T){
     # num_mesos=13
     # mesos=c(paste("M",1:(num_mesos-1),sep=""),"Fjord")
     # Mineral=c(rep(c("Ca(OH)2","Mg(OH)2"),num_mesos/2),NA)
@@ -69,20 +70,27 @@ R2HUconcatenateFlowdata=function(working_directory="./",
     #                              dim=c(num_mesos,3),
     #                              dimnames=list(1:num_mesos,c("Mesocosm","Mineral","Delta_TA")))
 
-    # tmp=KOSMOScurrentStyletable$Mesocosm
-    # # need to figure out which order they are in. this is a shit show.
-    # tmp=gsub("/","",tmp,)
-    # tmp=gsub("  "," ",tmp)
-    # tmp=strsplit(tmp," ")
-    # #tmp=tmp[lapply(tmp,grepl,pattern="/")]
-    # mesopos=grep("^[mM]\\d{1,2}$",tmp[[1]])
-    # conpos=grep("^\\d{1,4}$",tmp[[1]][-mesopos])
-    # catpos=(1:3)[-c(mesopos,conpos)]
-    # Mesocosm=unlist(lapply(tmp,"[",mesopos))
-    # CatVar=unlist(lapply(tmp,"[",catpos))
-    # ConVar=unlist(lapply(tmp,"[",conpos))
-    # treatment_combinations=cbind(Mesocosm,CatVar,ConVar)
-    # rm(ConVar,Mesocosm,CatVar)
+    tmp=KOSMOScurrentStyletable$Mesocosm
+
+    # need to figure out which order they are in. this is a shit show.
+    tmp=gsub("/","",tmp,)
+    tmp=gsub("  "," ",tmp)
+    tmp=strsplit(tmp," ")
+    #tmp=tmp[lapply(tmp,grepl,pattern="/")]
+    mesopos=grep("^[mM]\\d{1,2}$",tmp[[1]])
+    conpos=grep("^\\d{1,4}$",tmp[[1]][-mesopos])
+    catpos=(1:3)[-c(mesopos,conpos)]
+
+    Mesocosm=unlist(lapply(tmp,"[",mesopos))
+    CatVar=unlist(lapply(tmp,"[",catpos))
+    ConVar=unlist(lapply(tmp,"[",conpos))
+    treatment_combinations=cbind(Mesocosm,CatVar,ConVar)
+
+
+    rm(ConVar,Mesocosm,CatVar)
+  }
+
+
 
 
   available_files=list.files(paste0(working_directory,rawfile_folder),rawfile_identifier)
@@ -107,6 +115,7 @@ R2HUconcatenateFlowdata=function(working_directory="./",
 
 
   # disect the filenames to fill meta data columns
+  if(T){
     tmp=strsplit(concatenated_data$Filename," ") #split at spaces
 
     tmp_beginning=sapply(tmp, "[[", 1) #store first part
@@ -114,14 +123,6 @@ R2HUconcatenateFlowdata=function(working_directory="./",
     tmp_end=sapply(tmp, "[[", 3) #store last part
 
     concatenated_data$Time=sub("h",":",sapply(strsplit(tmp_end,".",fixed=T), "[[", 1)) #extract the time from the last part
-
-
-    #### fucked up fix for OAEPIIP filenames
-    if(strsplit(tmp_beginning[1],"_")[[1]][1]=="OAEPIIP"){
-      tmp_beginning=paste0("place_holder_",tmp_beginning)
-    }
-    #### fucked up fix for OAEPIIP filenames
-
 
     tmp_beginning=strsplit(tmp_beginning,"_") #split first part at underscores
 
@@ -137,17 +138,13 @@ R2HUconcatenateFlowdata=function(working_directory="./",
 
 
     #assign treatments to the mesocosm number
-    treatment_combinations=KOSMOScurrentStyletable[,1:4]
-    concatenated_data=merge(concatenated_data,treatment_combinations,by.x="Mesocosm",by.y=names(treatment_combinations)[1],all.x=T)
-
-
-    # concatenated_data[[KOSMOScurrentCategoricalVar]]=NA
-    # concatenated_data[[KOSMOScurrentContinuousVar]]=NA
-    # for(meso in treatment_combinations[,1]){
-    #   concatenated_data[concatenated_data$Mesocosm==meso,KOSMOScurrentCategoricalVar]=treatment_combinations[treatment_combinations[,1]==meso,KOSMOScurrentCategoricalVar]
-    #   concatenated_data[concatenated_data$Mesocosm==meso,KOSMOScurrentContinuousVar]=treatment_combinations[treatment_combinations[,1]==meso,KOSMOScurrentContinuousVar]
-    # }
-    # rm(meso)
+    concatenated_data[[KOSMOScurrentCategoricalVar]]=NA
+    concatenated_data[[KOSMOScurrentContinuousVar]]=NA
+    for(meso in treatment_combinations[,"Mesocosm"]){
+      concatenated_data[concatenated_data$Mesocosm_Name==meso,KOSMOScurrentCategoricalVar]=treatment_combinations[treatment_combinations[,"Mesocosm"]==meso,"CatVar"]
+      concatenated_data[concatenated_data$Mesocosm_Name==meso,KOSMOScurrentContinuousVar]=treatment_combinations[treatment_combinations[,"Mesocosm"]==meso,"ConVar"]
+    }
+    rm(meso)
 
     ### this was total crap on my end
     #deal with any control you find by checking what you have in the style cheat
@@ -155,22 +152,23 @@ R2HUconcatenateFlowdata=function(working_directory="./",
     #concatenated_data$Mineral[controlentries]=NA
     #concatenated_data$Delta_TA[controlentries]=NA
 
-    # # paste the rest together based on what you got
-    # concatenated_data$Treatment=paste(concatenated_data[[KOSMOScurrentContinuousVar]],"/",concatenated_data[[KOSMOScurrentCategoricalVar]])
-    # concatenated_data$Treat_Meso=paste(concatenated_data$Treatment,"/",concatenated_data$Mesocosm_Name)
+    # paste the rest together based on what you got
+    concatenated_data$Treatment=paste(concatenated_data[[KOSMOScurrentContinuousVar]],"/",concatenated_data[[KOSMOScurrentCategoricalVar]])
+    concatenated_data$Treat_Meso=paste(concatenated_data$Treatment,"/",concatenated_data$Mesocosm_Name)
+    concatenated_data$Treat_Meso[is.na(concatenated_data[[KOSMOScurrentCategoricalVar]])]=concatenated_data$Mesocosm_Name[is.na(concatenated_data[[KOSMOScurrentCategoricalVar]])]
 
-    ncols=ncol(concatenated_data)
-    concatenated_data[is.na(concatenated_data[[ncols]]),ncols]=concatenated_data$Mesocosm_Name[is.na(concatenated_data[[ncols]])]
 
     #rearrange columns according to the future excel sheet
-    #concatenated_data=concatenated_data[,c(ncols-6,ncols-5,(ncols-3):ncols,ncols-7,2,3:(ncols-8),ncols-4,1),]
-    concatenated_data=concatenated_data[,c(ncols-4,1,(ncols-2):ncols,ncols-5,3:(ncols-6),ncols-3,2)]
+    ncols=ncol(concatenated_data)
+    concatenated_data=concatenated_data[,c(ncols-6,ncols-5,(ncols-3):ncols,ncols-7,2,3:(ncols-8),ncols-4,1),]
+    #,ncols-5,ncols-3,ncols-2,ncols-1,
     rm(ncols)
+  }
 
   # fix datastructure - only what is necessary here
-  names(concatenated_data)[10]="Concentration [n/\u00b5l]"
+  names(concatenated_data)[11]="Concentration [n/\u00b5l]"
   concatenated_data$Day=factor(concatenated_data$Day,levels=sort(as.numeric(unique(concatenated_data$Day))))
-  ###concatenated_data[[KOSMOScurrentContinuousVar]]=as.integer(concatenated_data[[KOSMOScurrentContinuousVar]])
+  concatenated_data[[KOSMOScurrentContinuousVar]]=as.integer(concatenated_data[[KOSMOScurrentContinuousVar]])
   concatenated_data$Set=sub("/","_",concatenated_data$Set) #replace any "/" that stupid me used in set names
 
   #check that there are no duplicates

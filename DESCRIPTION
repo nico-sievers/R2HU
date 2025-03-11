@@ -1,7 +1,7 @@
 Package: R2HU
 Type: Package
 Title: Nico's various collected R-tools for science-related data handling
-Version: 1.2.0
+Version: 1.3.0
 License: GPL
 Authors@R: person("Nico", "Sievers", email = "nico.sievers@gmx.net", role = c("cre","aut"))
 Maintainer: Nico Sievers <nico.sievers@gmx.net>
