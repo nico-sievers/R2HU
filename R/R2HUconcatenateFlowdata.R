@@ -39,6 +39,8 @@ R2HUconcatenateFlowdata=function(working_directory="./",
                                  include_easyclus_metadata=FALSE,
                                  easyclus_metadata_filename="KOSMOS_Kiel_spring_2024_metadata-cleaned-EasyClus.csv",
 
+                                 number_of_name_underscores_total=6
+
                                  writetofile=TRUE,
                                  concatenatedfile_name="concatenated_clean_data.csv",
 
@@ -125,9 +127,9 @@ R2HUconcatenateFlowdata=function(working_directory="./",
 
     tmp_beginning=strsplit(tmp_beginning,"_") #split first part at underscores
 
-    concatenated_data$Settings=sapply(tmp_beginning, "[[", 5) #use first part as setting
-    tmp_day=sapply(tmp_beginning, "[[", 6) #store second part to get day number
-    tmp_mesocosm=sapply(tmp_beginning, "[[", 7) #store last part to get mesocosm number
+    concatenated_data$Settings=sapply(tmp_beginning, "[[", number_of_name_underscores_total-2 #use first part as setting
+    tmp_day=sapply(tmp_beginning, "[[", number_of_name_underscores_total-1) #store second part to get day number
+    tmp_mesocosm=sapply(tmp_beginning, "[[", number_of_name_underscores_total) #store last part to get mesocosm number
 
     concatenated_data$Day=gsub("T", "", tmp_day) #use only the number of the day
     concatenated_data$Mesocosm=gsub("M", "", tmp_mesocosm) #use only the number of the mesocosm
