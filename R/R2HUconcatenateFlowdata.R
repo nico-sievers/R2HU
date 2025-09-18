@@ -20,7 +20,7 @@
 
 
 # for debugging:
-# working_directory="./";rawfile_folder="export/set-statistics/";rawfile_identifier="set_statistics_";include_easyclus_metadata=F;easyclus_metadata_filename="KOSMOS_Kiel_spring_2024_metadata-cleaned-EasyClus.csv";writetofile=T;concatenatedfile_name="concatenated_clean_data.csv";writetoexcel=F;excelfile_name="KOSMOS_Kiel_spring_2024_FlowCytometry_Sievers_R.xlsx";excelfile_sheet="Main table";apply_chlacalibration=F;chlacalfile_sheet="Main table";setsinsupergroups=F;exclude_day_from_biomass=NULL;apply_lengthcalibration=F;calculate_percent_change=FALSE;baseline_days=1:3;percent_change_vars=c("Concentration [n/\u00b5l]","ChlaProxyRaw");library(utils);library(dplyr);library(readr);library(openxlsx);library(readxl);library(stats);library(KOSMOSplotR)
+# working_directory="./";rawfile_folder="export/set-statistics/";rawfile_identifier="set_statistics_";include_easyclus_metadata=F;easyclus_metadata_filename="KOSMOS_Kiel_spring_2024_metadata-cleaned-EasyClus.csv";writetofile=T;concatenatedfile_name="concatenated_clean_data.csv";writetoexcel=F;excelfile_name="KOSMOS_Kiel_spring_2024_FlowCytometry_Sievers_R.xlsx";excelfile_sheet="Main table";apply_chlacalibration=F;chlacalfile_sheet="Main table";setsinsupergroups=F;exclude_day_from_biomass=NULL;apply_lengthcalibration=F;calculate_percent_change=FALSE;baseline_days=1:3;percent_change_vars=c("Concentration [n/\u00b5l]","ChlaProxyRaw");number_of_name_underscores_total=6;library(utils);library(dplyr);library(readr);library(openxlsx);library(readxl);library(stats);library(KOSMOSplotR)
 
 # working_directory="../../FlowCytometry/";include_easyclus_metadata=T;concatenatedfile_name="newfunctionconcatenate.csv";writetoexcel=T;excelfile_name="KOSMOS_Kiel_spring_2024_FlowCytometry_Sievers_R - Copy.xlsx";apply_chlacalibration=T;setsinsupergroups=T;apply_lengthcalibration=T
 
@@ -38,6 +38,8 @@ R2HUconcatenateFlowdata=function(working_directory="./",
 
                                  include_easyclus_metadata=FALSE,
                                  easyclus_metadata_filename="KOSMOS_Kiel_spring_2024_metadata-cleaned-EasyClus.csv",
+
+                                 number_of_name_underscores_total=6,
 
                                  writetofile=TRUE,
                                  concatenatedfile_name="concatenated_clean_data.csv",
@@ -125,9 +127,9 @@ R2HUconcatenateFlowdata=function(working_directory="./",
 
     tmp_beginning=strsplit(tmp_beginning,"_") #split first part at underscores
 
-    concatenated_data$Settings=sapply(tmp_beginning, "[[", 5) #use first part as setting
-    tmp_day=sapply(tmp_beginning, "[[", 6) #store second part to get day number
-    tmp_mesocosm=sapply(tmp_beginning, "[[", 7) #store last part to get mesocosm number
+    concatenated_data$Settings=sapply(tmp_beginning, "[[", number_of_name_underscores_total-2) #use first part as setting
+    tmp_day=sapply(tmp_beginning, "[[", number_of_name_underscores_total-1) #store second part to get day number
+    tmp_mesocosm=sapply(tmp_beginning, "[[", number_of_name_underscores_total) #store last part to get mesocosm number
 
     concatenated_data$Day=gsub("T", "", tmp_day) #use only the number of the day
     concatenated_data$Mesocosm=gsub("M", "", tmp_mesocosm) #use only the number of the mesocosm
@@ -391,3 +393,4 @@ R2HUconcatenateFlowdata=function(working_directory="./",
   return(concatenated_data)
 
 }
+
