@@ -10,7 +10,7 @@ Description: R2HU ("R to help You") is a collection of functions that I use in m
 URL: https://github.com/nico-sievers/R2HU
 BugReports: https://github.com/nico-sievers/R2HU
 Encoding: UTF-8
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 Suggests: testthat (>= 3.0.0)
 Config/testthat/edition: 3
 Depends: R (>= 3.5.0), KOSMOSplotR (>= 2.0.0), utils (>= 3.0.0), dplyr (>= 1.1.0), tidyr (>= 1.3.0), readr (>= 2.1.0), openxlsx (>= 4.2.5.2), readxl (>= 1.4.0), ggplot2 (>= 3.0.0)
