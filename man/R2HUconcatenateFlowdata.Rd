@@ -27,7 +27,7 @@ R2HUconcatenateFlowdata(
 )
 }
 \arguments{
-\item{working_directory, rawfile_folder, rawfile_identifier, writetofile, concatenatedfile_name, writetoexcel, excelfile_name, excelfile_sheet, apply_chlacalibration, setsinsupergroups, apply_lengthcalibration}{\code{(to be updated)}}
+\item{working_directory, rawfile_folder, rawfile_identifier, writetofile, concatenatedfile_name, writetoexcel, excelfile_name, excelfile_sheet, apply_chlacalibration, setsinsupergroups, apply_lengthcalibration, include_easyclus_metadata, easyclus_metadata_filename, chlacalfile_name, chlacalfile_sheet, exclude_day_from_biomass, calculate_percent_change, baseline_days, percent_change_vars}{\code{(to be updated)}}
 }
 \value{
 Yields a clean data frame of the standard layout and writes to files if selected.

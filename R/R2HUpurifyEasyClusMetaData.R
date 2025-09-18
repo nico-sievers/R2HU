@@ -2,7 +2,7 @@
 #'
 #' @description \code{-BETA-}   Ask Nico if you would like to use this function.
 #'
-#' @param working_directory,rawfile_folder,rawfile_identifier,writetofile,concatenatedfile_name,writetoexcel,excelfile_name,excelfile_sheet,apply_chlacalibration,setsinsupergroups,apply_lengthcalibration \code{(to be updated)}
+#' @param rawfilename,separator,writetocsv,newfilename \code{(to be updated)}
 #'
 #' @return Returns the corrected table.
 #'

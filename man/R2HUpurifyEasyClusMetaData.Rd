@@ -12,7 +12,7 @@ R2HUpurifyEasyClusMetaData(
 )
 }
 \arguments{
-\item{working_directory, rawfile_folder, rawfile_identifier, writetofile, concatenatedfile_name, writetoexcel, excelfile_name, excelfile_sheet, apply_chlacalibration, setsinsupergroups, apply_lengthcalibration}{\code{(to be updated)}}
+\item{rawfilename, separator, writetocsv, newfilename}{\code{(to be updated)}}
 }
 \value{
 Returns the corrected table.
