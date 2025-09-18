@@ -127,7 +127,11 @@ R2HUconcatenateFlowdata=function(working_directory="./",
 
     tmp_beginning=strsplit(tmp_beginning,"_") #split first part at underscores
 
+<<<<<<< HEAD
     concatenated_data$Settings=sapply(tmp_beginning, "[[", number_of_name_underscores_total-2) #use first part as setting
+=======
+    concatenated_data$Settings=sapply(tmp_beginning, "[[", number_of_name_underscores_total-2 #use first part as setting
+>>>>>>> 3c4bce8ef3a24c4f02b33390e733d261f7dffee2
     tmp_day=sapply(tmp_beginning, "[[", number_of_name_underscores_total-1) #store second part to get day number
     tmp_mesocosm=sapply(tmp_beginning, "[[", number_of_name_underscores_total) #store last part to get mesocosm number
 
