@@ -10,6 +10,7 @@ R2HUconcatenateFlowdata(
   rawfile_identifier = "set_statistics_",
   include_easyclus_metadata = FALSE,
   easyclus_metadata_filename = "KOSMOS_Kiel_spring_2024_metadata-cleaned-EasyClus.csv",
+  number_of_name_underscores_total = 6,
   writetofile = TRUE,
   concatenatedfile_name = "concatenated_clean_data.csv",
   writetoexcel = FALSE,
